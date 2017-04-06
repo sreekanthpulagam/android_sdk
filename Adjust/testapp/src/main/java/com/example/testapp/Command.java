@@ -25,4 +25,8 @@ public class Command {
         }
         return parameterValues.get(0);
     }
+
+    public boolean containsParameter(String parameterKey) {
+        return this.parameters.get(parameterKey) != null;
+    }
 }

@@ -1,10 +1,19 @@
 package com.example.testapp;
 
 import android.content.Context;
-import android.net.*;
-import android.util.*;
+import android.util.Log;
 
-import com.adjust.sdk.*;
+import com.adjust.sdk.Adjust;
+import com.adjust.sdk.AdjustConfig;
+import com.adjust.sdk.AdjustEvent;
+import com.adjust.sdk.AdjustFactory;
+import com.adjust.sdk.LogLevel;
+
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import static com.example.testapp.MainActivity.TAG;
 
 /**
  * Created by nonelse on 10.03.17.
@@ -13,7 +22,10 @@ import com.adjust.sdk.*;
 public class AdjustCommandExecutor extends ICommandExecutor {
     Context context;
     String basePath;
-    private static final String TAG = "AdjustCommandExecutor";
+    private static final String DefaultConfigName = "defaultConfig";
+    private static final String DefaultEventName = "defaultEvent";
+    private Map<String, Object> savedInstances = new HashMap<String, Object>();
+
 
     public AdjustCommandExecutor(Context context) {
         this.context = context;
@@ -25,10 +37,12 @@ public class AdjustCommandExecutor extends ICommandExecutor {
 
         try {
             switch (command.methodName) {
-                case "onCreate": onCreate(); break;
+                case "config": config(); break;
+                case "start": start(); break;
+                case "event": event(); break;
                 case "trackEvent": trackEvent(); break;
-                case "onResume": onResume(); break;
-                case "onPause": onPause(); break;
+                case "resume": resume(); break;
+                case "pause": pause(); break;
                 case "setEnabled": setEnabled(); break;
                 case "setReferrer": setReferrer(); break;
                 case "setOfflineMode": setOfflineMode(); break;
@@ -52,109 +66,225 @@ public class AdjustCommandExecutor extends ICommandExecutor {
         this.basePath = basePath;
     }
 
-    private void onCreate() {
-        String environment = command.getFirstParameterValue("environment");
-        String appToken = command.getFirstParameterValue("appToken");
-
-        AdjustConfig config = new AdjustConfig(this.context, appToken, environment);
-        config.setBasePath(basePath);
-
-        config.setLogLevel(LogLevel.VERBOSE);
-
-        Adjust.onCreate(config);
-
-        Adjust.onResume();
-    }
-
-    private void trackEvent() throws NullPointerException {
-        String eventToken = command.getFirstParameterValue("eventToken");
-
-        AdjustEvent event = new AdjustEvent(eventToken);
-
-        String temp;
-        if((temp = command.getFirstParameterValue("currency")) != null) {
-            Double revenue = Double.valueOf(command.getFirstParameterValue("revenue"));
-            event.setRevenue(revenue, temp);
-        } else if((temp = command.getFirstParameterValue("callbackParams")) != null) {
-            String[] pairs = temp.split(",,,");
-            for (String pair : pairs) {
-                String[] keyAndValue = pair.split("@");
-                event.addCallbackParameter(keyAndValue[0], keyAndValue[1]);
-            }
-        } else if((temp = command.getFirstParameterValue("partnerParams")) != null) {
-            String[] pairs = temp.split(",,,");
-            for (String pair : pairs) {
-                String[] keyAndValue = pair.split("@");
-                event.addPartnerParameter(keyAndValue[0], keyAndValue[1]);
-            }
+    private void config() {
+        String configName = null;
+        if (command.parameters.containsKey("configName")) {
+            configName = command.getFirstParameterValue("configName");
+        } else {
+            configName = DefaultConfigName;
         }
 
-        Adjust.trackEvent(event);
+        AdjustConfig adjustConfig = null;
+        if (savedInstances.containsKey(configName)) {
+            adjustConfig = (AdjustConfig)savedInstances.get(configName);
+        } else {
+            String environment = command.getFirstParameterValue("environment");
+            String appToken = command.getFirstParameterValue("appToken");
+            Context context = this.context;
+            if ("null".equalsIgnoreCase(command.getFirstParameterValue("context"))) {
+                context = null;
+            }
+            adjustConfig = new AdjustConfig(context, appToken, environment);
+            savedInstances.put(configName, adjustConfig);
+        }
+
+        if (command.containsParameter("logLevel")) {
+            String logLevelS = command.getFirstParameterValue("logLevel");
+            LogLevel logLevel = null;
+            switch (logLevelS) {
+                case "verbose": logLevel = LogLevel.VERBOSE;
+                    break;
+                case "debug": logLevel = LogLevel.DEBUG;
+                    break;
+                case "info": logLevel = LogLevel.INFO;
+                    break;
+                case "warn": logLevel = LogLevel.WARN;
+                    break;
+                case "error": logLevel = LogLevel.ERROR;
+                    break;
+                case "assert": logLevel = LogLevel.ASSERT;
+                    break;
+                case "suppress": logLevel = LogLevel.SUPRESS;
+                    break;
+            }
+            adjustConfig.setLogLevel(logLevel);
+        }
+
+        if (command.containsParameter("defaultTracker")) {
+            String defaultTracker = command.getFirstParameterValue("defaultTracker");
+            adjustConfig.setDefaultTracker(defaultTracker);
+        }
+
+        if (command.containsParameter("delayStart")) {
+            String delayStartS = command.getFirstParameterValue("delayStart");
+            double delayStart = Double.parseDouble(delayStartS);
+            adjustConfig.setDelayStart(delayStart);
+        }
+
+        if (command.containsParameter("deviceKnown")) {
+            String deviceKnownS = command.getFirstParameterValue("deviceKnown");
+            boolean deviceKnown = "true".equals(deviceKnownS);
+            adjustConfig.setDeviceKnown(deviceKnown);
+        }
+
+        if (command.containsParameter("eventBufferingEnabled")) {
+            String eventBufferingEnabledS = command.getFirstParameterValue("eventBufferingEnabled");
+            boolean eventBufferingEnabled = "true".equals(eventBufferingEnabledS);
+            adjustConfig.setEventBufferingEnabled(eventBufferingEnabled);
+        }
+
+        if (command.containsParameter("sendInBackground")) {
+            String sendInBackgroundS = command.getFirstParameterValue("sendInBackground");
+            boolean sendInBackground = "true".equals(sendInBackgroundS);
+            adjustConfig.setSendInBackground(sendInBackground);
+        }
+
+        if (command.containsParameter("userAgent")) {
+            String userAgent = command.getFirstParameterValue("userAgent");
+            adjustConfig.setUserAgent(userAgent);
+        }
+        // XXX add listeners
     }
 
-    private void setReferrer() throws NullPointerException {
+    private void start() {
+        config();
+        String configName = null;
+        if (command.parameters.containsKey("configName")) {
+            configName = command.getFirstParameterValue("configName");
+        } else {
+            configName = DefaultConfigName;
+        }
+
+        AdjustConfig adjustConfig = (AdjustConfig)savedInstances.get(configName);
+
+        adjustConfig.setBasePath(basePath);
+        Adjust.onCreate(adjustConfig);
+    }
+
+    private void event() throws NullPointerException {
+        String eventName = null;
+        if (command.parameters.containsKey("eventName")) {
+            eventName = command.getFirstParameterValue("eventName");
+        } else {
+            eventName = DefaultEventName;
+        }
+
+        AdjustEvent adjustEvent = null;
+        if (savedInstances.containsKey(eventName)) {
+            adjustEvent = (AdjustEvent)savedInstances.get(eventName);
+        } else {
+            String eventToken = command.getFirstParameterValue("eventToken");
+            adjustEvent = new AdjustEvent(eventToken);
+            savedInstances.put(eventName, adjustEvent);
+        }
+
+        if (command.parameters.containsKey("revenue")) {
+            List<String> revenueParams = command.parameters.get("revenue");
+            String currency = revenueParams.get(0);
+            double revenue = Double.parseDouble(revenueParams.get(1));
+            adjustEvent.setRevenue(revenue, currency);
+        }
+
+        if (command.parameters.containsKey("callbackParams")) {
+            List<String> callbackParams = command.parameters.get("callbackParams");
+            for (int i = 0; i < callbackParams.size(); i = i + 2) {
+                String key = callbackParams.get(i);
+                String value = callbackParams.get(i + 1);
+                adjustEvent.addCallbackParameter(key, value);
+            }
+        }
+        if (command.parameters.containsKey("partnerParams")) {
+            List<String> partnerParams = command.parameters.get("partnerParams");
+            for (int i = 0; i < partnerParams.size(); i = i + 2) {
+                String key = partnerParams.get(i);
+                String value = partnerParams.get(i + 1);
+                adjustEvent.addPartnerParameter(key, value);
+            }
+        }
+        if (command.parameters.containsKey("orderId")) {
+            String orderId = command.getFirstParameterValue("orderId");
+            adjustEvent.setOrderId(orderId);
+        }
+
+        Adjust.trackEvent(adjustEvent);
+    }
+
+    private void trackEvent() {
+        event();
+        String eventName = null;
+        if (command.parameters.containsKey("eventName")) {
+            eventName = command.getFirstParameterValue("eventName");
+        } else {
+            eventName = DefaultConfigName;
+        }
+        AdjustEvent adjustEvent = (AdjustEvent)savedInstances.get(eventName);
+        Adjust.trackEvent(adjustEvent);
+    }
+
+    private void setReferrer() {
         String referrer = command.getFirstParameterValue("referrer");
         Adjust.setReferrer(referrer);
     }
 
-    private void onPause() throws NullPointerException {
+    private void pause() {
         Adjust.onPause();
     }
 
-    private void onResume() throws NullPointerException {
+    private void resume() {
         Adjust.onResume();
     }
 
-    private void setEnabled() throws NullPointerException {
+    private void setEnabled() {
         Boolean enabled = Boolean.valueOf(command.getFirstParameterValue("enabled"));
         Adjust.setEnabled(enabled);
     }
 
-    private void setOfflineMode() throws NullPointerException {
+    private void setOfflineMode() {
         Boolean enabled = Boolean.valueOf(command.getFirstParameterValue("enabled"));
         Adjust.setOfflineMode(enabled);
     }
 
-    private void sendFirstPackages() throws NullPointerException {
+    private void sendFirstPackages() {
         Adjust.sendFirstPackages();
     }
 
-    private void addSessionCallbackParameter() throws NullPointerException {
-        String key = command.getFirstParameterValue("key");
-        String value = command.getFirstParameterValue("value");
-
-        Adjust.addSessionCallbackParameter(key, value);
+    private void addSessionCallbackParameter() {
+        for (List<String> keyValuePairs: command.parameters.values()) {
+            String key = keyValuePairs.get(0);
+            String value = keyValuePairs.get(1);
+            Adjust.addSessionCallbackParameter(key, value);
+        }
     }
 
-    private void addSessionPartnerParameter() throws NullPointerException {
-        String key = command.getFirstParameterValue("key");
-        String value = command.getFirstParameterValue("value");
-
-        Adjust.addSessionPartnerParameter(key, value);
+    private void addSessionPartnerParameter() {
+        for (List<String> keyValuePairs: command.parameters.values()) {
+            String key = keyValuePairs.get(0);
+            String value = keyValuePairs.get(1);
+            Adjust.addSessionPartnerParameter(key, value);
+        }
     }
 
-    private void removeSessionCallbackParameter() throws NullPointerException {
+    private void removeSessionCallbackParameter() {
         String key = command.getFirstParameterValue("key");
-
         Adjust.removeSessionCallbackParameter(key);
     }
 
-    private void removeSessionPartnerParameter() throws NullPointerException {
+    private void removeSessionPartnerParameter() {
         String key = command.getFirstParameterValue("key");
 
-        Adjust.removeSessionCallbackParameter(key);
+        Adjust.removeSessionPartnerParameter(key);
     }
 
-    private void resetSessionCallbackParameters() throws NullPointerException {
+    private void resetSessionCallbackParameters() {
         Adjust.resetSessionCallbackParameters();
     }
 
-    private void resetSessionPartnerParameters() throws NullPointerException {
+    private void resetSessionPartnerParameters() {
         Adjust.resetSessionPartnerParameters();
     }
 
-    private void setPushToken() throws NullPointerException {
-        String token = command.getFirstParameterValue("token");
+    private void setPushToken() {
+        String token = command.getFirstParameterValue("pushToken");
 
         Adjust.setPushToken(token);
     }
@@ -165,5 +295,4 @@ public class AdjustCommandExecutor extends ICommandExecutor {
 
         AdjustFactory.teardown(deleteState);
     }
-
 }
