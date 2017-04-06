@@ -9,6 +9,7 @@ import com.adjust.testlibrary.TestLibrary;
 public class MainActivity extends AppCompatActivity {
     private TestLibrary testLibrary;
     private CommandListener commandListener;
+    public static final String TAG = "TestApp";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {

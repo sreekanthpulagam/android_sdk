@@ -8,7 +8,7 @@ import java.util.concurrent.Future;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
-import static com.adjust.testlibrary.Constants.TEST_CANCEL;
+import static com.adjust.testlibrary.Constants.TEST_CANCEL_HEADER;
 import static com.adjust.testlibrary.Utils.debug;
 import static com.adjust.testlibrary.Utils.sendPostI;
 
@@ -48,8 +48,8 @@ public class ControlChannel {
     }
 
     void readControlHeaders(Util.HttpResponse httpResponse) {
-        if (httpResponse.headerFields.containsKey(TEST_CANCEL)) {
-            debug("Test canceled due to %s", httpResponse.headerFields.get(TEST_CANCEL).get(0));
+        if (httpResponse.headerFields.containsKey(TEST_CANCEL_HEADER)) {
+            debug("Test canceled due to %s", httpResponse.headerFields.get(TEST_CANCEL_HEADER).get(0));
             testLibrary.flushExecution();
         }
         testLibrary.readHeaders(httpResponse);
