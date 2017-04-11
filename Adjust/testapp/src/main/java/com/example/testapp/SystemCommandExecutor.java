@@ -13,6 +13,7 @@ public class SystemCommandExecutor extends ICommandExecutor {
 
         switch (command.methodName) {
             case "sleep": sleep(); break;
+            case "exit": exit(); break;
         }
     }
 
@@ -21,5 +22,9 @@ public class SystemCommandExecutor extends ICommandExecutor {
         long millis = Long.parseLong(millisString);
 
         SystemClock.sleep(millis);
+    }
+
+    private void exit() {
+        System.exit(0);
     }
 }
