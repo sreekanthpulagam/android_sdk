@@ -1,8 +1,5 @@
 package com.adjust.testlibrary;
 
-import com.adjust.sdk.AdjustFactory;
-import com.adjust.sdk.Util;
-
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
@@ -13,8 +10,8 @@ import java.util.concurrent.TimeUnit;
 import static com.adjust.testlibrary.Constants.BASE_PATH_HEADER;
 import static com.adjust.testlibrary.Constants.TEST_SCRIPT_HEADER;
 import static com.adjust.testlibrary.Constants.TEST_SESSION_END_HEADER;
+import static com.adjust.testlibrary.UtilsNetworking.gson;
 import static com.adjust.testlibrary.Utils.debug;
-import static com.adjust.testlibrary.Utils.gson;
 import static com.adjust.testlibrary.Utils.sendPostI;
 
 
@@ -25,7 +22,7 @@ import static com.adjust.testlibrary.Utils.sendPostI;
 public class TestLibrary {
     private static final String TEST_LIBRARY = "TestLibrary";
 
-    String baseUrl;
+    static String baseUrl;
     ScheduledThreadPoolExecutor executor = new ScheduledThreadPoolExecutor(1);
     ICommandListener commandListener;
     ICommandJsonListener commandJsonListener;
@@ -47,8 +44,7 @@ public class TestLibrary {
     private TestLibrary(String baseUrl) {
         this.baseUrl = baseUrl;
 
-        AdjustFactory.setBaseUrl(baseUrl);
-        debug("base url: %s", AdjustFactory.getBaseUrl());
+        debug("base url: %s", baseUrl);
     }
 
     public void initTestSession(final String clientSdk) {
@@ -60,7 +56,7 @@ public class TestLibrary {
         });
     }
 
-    public void readHeaders(final Util.HttpResponse httpResponse) {
+    public void readHeaders(final UtilsNetworking.HttpResponse httpResponse) {
         lastFuture = executor.submit(new Runnable() {
             @Override
             public void run() {
@@ -80,7 +76,7 @@ public class TestLibrary {
     }
 
     private void sendTestSessionI(String clientSdk) {
-        Util.HttpResponse httpResponse = sendPostI("/init_session", clientSdk);
+        UtilsNetworking.HttpResponse httpResponse = sendPostI("/init_session", clientSdk);
         if (httpResponse == null) {
             return;
         }
@@ -88,7 +84,7 @@ public class TestLibrary {
         readHeadersI(httpResponse);
     }
 
-    public void readHeadersI(Util.HttpResponse httpResponse) {
+    public void readHeadersI(UtilsNetworking.HttpResponse httpResponse) {
         if (httpResponse.headerFields.containsKey(TEST_SESSION_END_HEADER)) {
             controlChannel.endControlChannel();
             debug("TestSessionEnd received");
@@ -111,13 +107,6 @@ public class TestLibrary {
 
     private void execTestCommandsI(List<TestCommand> testCommands) {
         debug("testCommands: %s", testCommands);
-
-        // set the base path for the start of the test
-        if (commandListener != null) {
-            commandListener.setBasePath(currentBasePath);
-        } else {
-            commandJsonListener.setBasePath(currentBasePath);
-        }
 
         for (TestCommand testCommand : testCommands) {
             debug("ClassName: %s", testCommand.className);
@@ -155,11 +144,12 @@ public class TestLibrary {
     private void executeTestLibraryCommandI(TestCommand testCommand) {
         switch (testCommand.functionName) {
             case "end_test": endTestI(); break;
+//            case "wait": waitI(testCommand.params); break;
         }
     }
 
     private void endTestI() {
-        Util.HttpResponse httpResponse = sendPostI(Utils.appendBasePath(currentBasePath, "/end_test"));
+        UtilsNetworking.HttpResponse httpResponse = sendPostI(Utils.appendBasePath(currentBasePath, "/end_test"));
         this.currentTest = null;
         if (httpResponse == null) {
             return;
@@ -167,4 +157,15 @@ public class TestLibrary {
 
         readHeadersI(httpResponse);
     }
+/*
+    private void waitI(Map<String, List<String>> params) {
+        try {
+            debug("waiting for request to be received ");
+            String requestName = waitForRequestQueue.take();
+            debug("finished waiting for %s", requestName);
+        } catch (InterruptedException e) {
+            debug("wait error: %s", e.getMessage());
+        }
+    }
+    */
 }
