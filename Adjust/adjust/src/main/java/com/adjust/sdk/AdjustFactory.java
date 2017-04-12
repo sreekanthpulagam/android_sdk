@@ -24,6 +24,7 @@ public class AdjustFactory {
     private static BackoffStrategy packageHandlerBackoffStrategy = null;
     private static long maxDelayStart = -1;
     private static String baseUrl = Constants.BASE_URL;
+    private static UtilNetworking.IConnectionOptions connectionOptions = null;
 
     // Getters
     public static class URLGetConnection {
@@ -147,6 +148,13 @@ public class AdjustFactory {
 
     public static String getBaseUrl() {
         return AdjustFactory.baseUrl;
+    }
+
+    public static UtilNetworking.IConnectionOptions getConnectionOptions() {
+        if (connectionOptions == null) {
+            return new UtilNetworking.ConnectionOptions();
+        }
+        return connectionOptions;
     }
 
     // Teardown
