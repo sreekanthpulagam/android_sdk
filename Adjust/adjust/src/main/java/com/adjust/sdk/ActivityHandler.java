@@ -54,6 +54,7 @@ public class ActivityHandler implements IActivityHandler {
     private TimerOnce backgroundTimer;
     private TimerOnce delayStartTimer;
     private InternalState internalState;
+    private String basePath;
 
     private DeviceInfo deviceInfo;
     private AdjustConfig adjustConfig; // always valid after construction
@@ -610,6 +611,7 @@ public class ActivityHandler implements IActivityHandler {
         });
     }
 
+    @Override
     public String getAdid() {
         if (activityState == null) {
             return null;
@@ -617,8 +619,14 @@ public class ActivityHandler implements IActivityHandler {
         return activityState.adid;
     }
 
+    @Override
     public AdjustAttribution getAttribution() {
         return attribution;
+    }
+
+    @Override
+    public String getBasePath() {
+        return this.basePath;
     }
 
     public ActivityPackage getAttributionPackageI() {
@@ -736,6 +744,8 @@ public class ActivityHandler implements IActivityHandler {
 
         UtilNetworking.setUserAgent(adjustConfig.userAgent);
 
+        this.basePath = adjustConfig.basePath;
+
         packageHandler = AdjustFactory.getPackageHandler(this, adjustConfig.context, toSendI(false));
 
         ActivityPackage attributionPackage = getAttributionPackageI();
@@ -744,7 +754,7 @@ public class ActivityHandler implements IActivityHandler {
                 attributionPackage,
                 toSendI(false));
 
-        sdkClickHandler = AdjustFactory.getSdkClickHandler(toSendI(true));
+        sdkClickHandler = AdjustFactory.getSdkClickHandler(this, toSendI(true));
 
         if (isToUpdatePackagesI()) {
             updatePackagesI();
