@@ -4,6 +4,7 @@ import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.view.View;
 
+import com.adjust.sdk.AdjustFactory;
 import com.adjust.testlibrary.TestLibrary;
 
 public class MainActivity extends AppCompatActivity {
@@ -17,7 +18,9 @@ public class MainActivity extends AppCompatActivity {
         setContentView(R.layout.activity_main);
 
         commandListener = new CommandListener(this.getApplicationContext());
-        testLibrary = new TestLibrary("https://10.0.2.2:8443", commandListener);
+        String baseUrl = "https://10.0.2.2:8443";
+        AdjustFactory.setBaseUrl(baseUrl);
+        testLibrary = new TestLibrary(baseUrl, commandListener);
         startTestSession();
     }
 
