@@ -230,4 +230,8 @@ public class AdjustFactory {
     public static void setBaseUrl(String baseUrl) {
         AdjustFactory.baseUrl = baseUrl;
     }
+
+    public static void setConnectionOptions(UtilNetworking.IConnectionOptions connectionOptions) {
+        AdjustFactory.connectionOptions = connectionOptions;
+    }
 }
