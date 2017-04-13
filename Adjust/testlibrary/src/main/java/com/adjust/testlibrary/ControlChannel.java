@@ -2,12 +2,11 @@ package com.adjust.testlibrary;
 
 import android.os.SystemClock;
 
-import com.adjust.sdk.Util;
-
 import java.util.concurrent.Future;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
+import static com.adjust.testlibrary.Constants.ONE_SECOND;
 import static com.adjust.testlibrary.Constants.TEST_CANCEL_HEADER;
 import static com.adjust.testlibrary.Utils.debug;
 import static com.adjust.testlibrary.Utils.sendPostI;
@@ -34,7 +33,7 @@ public class ControlChannel {
             long timeBefore = System.nanoTime();
             debug("time before wait: %d", timeBefore);
 
-            Util.HttpResponse httpResponse = sendPostI(
+            UtilsNetworking.HttpResponse httpResponse = sendPostI(
                     Utils.appendBasePath(testLibrary.currentBasePath,"/control"));
 
             long timeAfter = System.nanoTime();
@@ -47,7 +46,7 @@ public class ControlChannel {
         });
     }
 
-    void readControlHeaders(Util.HttpResponse httpResponse) {
+    void readControlHeaders(UtilsNetworking.HttpResponse httpResponse) {
         if (httpResponse.headerFields.containsKey(TEST_CANCEL_HEADER)) {
             debug("Test canceled due to %s", httpResponse.headerFields.get(TEST_CANCEL_HEADER).get(0));
             testLibrary.flushExecution();
@@ -60,7 +59,7 @@ public class ControlChannel {
             // if the side channel connection is not done yet
             if (!controlChannelFuture.isDone()) {
                 // wait one second before forcefully ending the connection
-                SystemClock.sleep(com.adjust.sdk.Constants.ONE_SECOND);
+                SystemClock.sleep(ONE_SECOND);
             }
             // if the side channel connection is still not done
             if (!controlChannelFuture.isDone()) {

@@ -1,23 +1,12 @@
 package com.adjust.testlibrary;
 
-import android.net.Uri;
-
-import com.google.gson.Gson;
-import com.google.gson.reflect.TypeToken;
-
-import org.json.JSONException;
-import org.json.JSONObject;
-
 import java.io.BufferedReader;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.io.UnsupportedEncodingException;
 import java.lang.reflect.Type;
 import java.net.URL;
-import java.net.URLEncoder;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -40,7 +29,6 @@ public class UtilsNetworking {
     static ConnectionOptions connectionOptions;
     static TrustManager[] trustAllCerts;
     static HostnameVerifier hostnameVerifier;
-    static Gson gson;
     static Type stringStringMap;
 
     static {
@@ -68,8 +56,6 @@ public class UtilsNetworking {
             }
         };
         connectionOptions = new ConnectionOptions();
-        gson = new Gson();
-        stringStringMap = new TypeToken<Map<String, String>>(){}.getType();
     }
 
     public static class HttpResponse {
