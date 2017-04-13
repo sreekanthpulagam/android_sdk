@@ -6,7 +6,6 @@ import android.util.Log;
 import com.adjust.testlibrary.ICommandListener;
 
 import java.util.Arrays;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -16,24 +15,22 @@ import java.util.Map;
  */
 
 public class CommandListener implements ICommandListener {
-    Map<String, ICommandExecutor> classMap;
     AdjustCommandExecutor adjustCommandExecutor;
 
     public CommandListener(Context context) {
         adjustCommandExecutor = new AdjustCommandExecutor(context);
-        classMap = new HashMap<String, ICommandExecutor>();
-        classMap.put ("Adjust", adjustCommandExecutor);
-        classMap.put ("System", new SystemCommandExecutor());
     }
 
     @Override
     public void executeCommand(String className, String methodName, Map<String, List<String>> parameters) {
-        ICommandExecutor commandExecutor = this.classMap.get(className);
-        if (commandExecutor == null) {
-            debug("Could not find %s class to execute", className);
-            return;
+        switch (className) {
+            case "Adjust":
+                adjustCommandExecutor.executeCommand(new Command(className, methodName, parameters));
+                break;
+            default:
+                debug("Could not find %s class to execute", className);
+                break;
         }
-        commandExecutor.executeCommand(new Command(className, methodName, parameters));
     }
 
     static void debug(String message, Object... parameters) {

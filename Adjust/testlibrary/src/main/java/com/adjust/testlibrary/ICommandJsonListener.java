@@ -6,5 +6,4 @@ package com.adjust.testlibrary;
 
 public interface ICommandJsonListener {
     void executeCommand(String className, String methodName, String jsonParameters);
-    void setBasePath(String basePath);
 }

@@ -152,6 +152,7 @@ public class TestLibrary {
         switch (testCommand.functionName) {
             case "end_test": endTestI(); break;
             case "wait": waitI(testCommand.params); break;
+            case "exit": exit(); break;
         }
     }
 
@@ -181,5 +182,9 @@ public class TestLibrary {
 
             SystemClock.sleep(millisToSleep);
         }
+    }
+
+    private void exit() {
+        System.exit(0);
     }
 }
