@@ -2,12 +2,15 @@ package com.adjust.testlibrary;
 
 import android.os.SystemClock;
 
+import java.util.List;
+import java.util.Map;
 import java.util.concurrent.Future;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
 import static com.adjust.testlibrary.Constants.ONE_SECOND;
 import static com.adjust.testlibrary.Constants.TEST_CANCEL_HEADER;
+import static com.adjust.testlibrary.Constants.TEST_ENDWAIT_HEADER;
 import static com.adjust.testlibrary.Utils.debug;
 import static com.adjust.testlibrary.Utils.sendPostI;
 
@@ -16,6 +19,9 @@ import static com.adjust.testlibrary.Utils.sendPostI;
  */
 
 public class ControlChannel {
+    private static final String CONTROL_START_PATH = "/control_start";
+    private static final String CONTROL_CONTINUE_PATH = "/control_continue";
+
     ScheduledThreadPoolExecutor controlChannelExecutor = new ScheduledThreadPoolExecutor(1);
     Future<?> controlChannelFuture;
     TestLibrary testLibrary;
@@ -27,31 +33,7 @@ public class ControlChannel {
     public void startControlChannel() {
         endControlChannel();
         debug("startControlChannel");
-        this.controlChannelFuture = controlChannelExecutor.submit(new Runnable() {
-            @Override
-            public void run() {
-            long timeBefore = System.nanoTime();
-            debug("time before wait: %d", timeBefore);
-
-            UtilsNetworking.HttpResponse httpResponse = sendPostI(
-                    Utils.appendBasePath(testLibrary.currentBasePath,"/control"));
-
-            long timeAfter = System.nanoTime();
-            long timeElapsedMillis = TimeUnit.NANOSECONDS.toMillis(timeAfter - timeBefore);
-            debug("time after wait: %d", timeAfter);
-            debug("time elapsed waiting in milli seconds: %d", timeElapsedMillis);
-
-            readControlHeaders(httpResponse);
-            }
-        });
-    }
-
-    void readControlHeaders(UtilsNetworking.HttpResponse httpResponse) {
-        if (httpResponse.headerFields.containsKey(TEST_CANCEL_HEADER)) {
-            debug("Test canceled due to %s", httpResponse.headerFields.get(TEST_CANCEL_HEADER).get(0));
-            testLibrary.flushExecution();
-        }
-        testLibrary.readHeaders(httpResponse);
+        sendControlRequest(CONTROL_START_PATH);
     }
 
     public void endControlChannel() {
@@ -71,5 +53,48 @@ public class ControlChannel {
             }
         }
         controlChannelFuture = null;
+    }
+
+    private void sendControlRequest(final String controlPath) {
+        this.controlChannelFuture = controlChannelExecutor.submit(new Runnable() {
+            @Override
+            public void run() {
+                long timeBefore = System.nanoTime();
+                debug("time before wait: %d", timeBefore);
+
+                UtilsNetworking.HttpResponse httpResponse = sendPostI(
+                        Utils.appendBasePath(testLibrary.currentBasePath, controlPath));
+
+                long timeAfter = System.nanoTime();
+                long timeElapsedMillis = TimeUnit.NANOSECONDS.toMillis(timeAfter - timeBefore);
+                debug("time after wait: %d", timeAfter);
+                debug("time elapsed waiting in milli seconds: %d", timeElapsedMillis);
+
+                readControlHeaders(httpResponse);
+            }
+        });
+    }
+
+    void readControlHeaders(UtilsNetworking.HttpResponse httpResponse) {
+        if (httpResponse.headerFields.containsKey(TEST_CANCEL_HEADER)) {
+            debug("Test canceled due to %s", httpResponse.headerFields.get(TEST_CANCEL_HEADER).get(0));
+            testLibrary.flushExecution();
+            testLibrary.readHeaders(httpResponse);
+        }
+        if (httpResponse.headerFields.containsKey(TEST_ENDWAIT_HEADER)) {
+            String waitEndReason = httpResponse.headerFields.get(TEST_ENDWAIT_HEADER).get(0);
+            sendControlRequest(CONTROL_CONTINUE_PATH);
+            endWait(waitEndReason);
+        }
+    }
+
+    void endWait(String waitEndReason) {
+        try {
+            debug("End wait from control channel due to %s", waitEndReason);
+            testLibrary.waitControlQueue.put(waitEndReason);
+            debug("Wait ended from control channel due to %s", waitEndReason);
+        } catch (InterruptedException e) {
+            debug("wait put error: %s", e.getMessage());
+        }
     }
 }
