@@ -1,5 +1,7 @@
 package com.adjust.testlibrary;
 
+import com.google.gson.Gson;
+
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
@@ -10,7 +12,6 @@ import java.util.concurrent.TimeUnit;
 import static com.adjust.testlibrary.Constants.BASE_PATH_HEADER;
 import static com.adjust.testlibrary.Constants.TEST_SCRIPT_HEADER;
 import static com.adjust.testlibrary.Constants.TEST_SESSION_END_HEADER;
-import static com.adjust.testlibrary.UtilsNetworking.gson;
 import static com.adjust.testlibrary.Utils.debug;
 import static com.adjust.testlibrary.Utils.sendPostI;
 
@@ -30,6 +31,7 @@ public class TestLibrary {
     String currentTest;
     Future<?> lastFuture;
     public String currentBasePath;
+    Gson gson;
 
     public TestLibrary(String baseUrl, ICommandJsonListener commandJsonListener) {
         this(baseUrl);
@@ -43,8 +45,9 @@ public class TestLibrary {
 
     private TestLibrary(String baseUrl) {
         this.baseUrl = baseUrl;
-
         debug("base url: %s", baseUrl);
+
+        this.gson = new Gson();
     }
 
     public void initTestSession(final String clientSdk) {

@@ -26,6 +26,8 @@ dependencies {
     // test library dependency
     compile project(":testlibrary")
 
+    compile project (":adjust")
+
     compile 'com.android.support:appcompat-v7:25.2.0'
     compile 'com.android.support.constraint:constraint-layout:+'
 }

@@ -15,7 +15,7 @@ android {
 dependencies {
     compile fileTree(dir: 'libs', include: ['*.jar'])
 
-    compile project(":adjust")
+    compile 'com.google.code.gson:gson:2.8.0'
 }
 
 task clearJar(type: Delete) {
