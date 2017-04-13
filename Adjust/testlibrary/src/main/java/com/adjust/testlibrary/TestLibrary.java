@@ -10,6 +10,7 @@ import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
 import static com.adjust.testlibrary.Constants.BASE_PATH_HEADER;
+import static com.adjust.testlibrary.Constants.TEST_LIBRARY_CLASSNAME;
 import static com.adjust.testlibrary.Constants.TEST_SCRIPT_HEADER;
 import static com.adjust.testlibrary.Constants.TEST_SESSION_END_HEADER;
 import static com.adjust.testlibrary.Utils.debug;
@@ -21,8 +22,6 @@ import static com.adjust.testlibrary.Utils.sendPostI;
  */
 
 public class TestLibrary {
-    private static final String TEST_LIBRARY = "TestLibrary";
-
     static String baseUrl;
     ScheduledThreadPoolExecutor executor = new ScheduledThreadPoolExecutor(1);
     ICommandListener commandListener;
@@ -123,7 +122,7 @@ public class TestLibrary {
             long timeBefore = System.nanoTime();
             debug("time before %s %s: %d", testCommand.className, testCommand.functionName, timeBefore);
 
-            if (TEST_LIBRARY.equals(testCommand.className)) {
+            if (TEST_LIBRARY_CLASSNAME.equals(testCommand.className)) {
                 executeTestLibraryCommandI(testCommand);
                 long timeAfter = System.nanoTime();
                 long timeElapsedMillis = TimeUnit.NANOSECONDS.toMillis(timeAfter - timeBefore);

@@ -37,6 +37,7 @@ public class AdjustCommandExecutor extends ICommandExecutor {
 
         try {
             switch (command.methodName) {
+                case "factory": factory(); break;
                 case "config": config(); break;
                 case "start": start(); break;
                 case "event": event(); break;
@@ -62,8 +63,10 @@ public class AdjustCommandExecutor extends ICommandExecutor {
         }
     }
 
-    public void setBasePath(String basePath) {
-        this.basePath = basePath;
+    private void factory() {
+        if (command.containsParameter("basePath")) {
+            this.basePath = command.getFirstParameterValue("basePath");
+        }
     }
 
     private void config() {

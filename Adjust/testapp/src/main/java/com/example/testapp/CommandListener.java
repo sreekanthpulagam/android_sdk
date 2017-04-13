@@ -36,11 +36,6 @@ public class CommandListener implements ICommandListener {
         commandExecutor.executeCommand(new Command(className, methodName, parameters));
     }
 
-    @Override
-    public void setBasePath(String basePath) {
-        adjustCommandExecutor.setBasePath(basePath);
-    }
-
     static void debug(String message, Object... parameters) {
         try {
             Log.d("TestApp", String.format(Locale.US, message, parameters));
