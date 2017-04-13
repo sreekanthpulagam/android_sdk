@@ -19,22 +19,20 @@ import static com.example.testapp.MainActivity.TAG;
  * Created by nonelse on 10.03.17.
  */
 
-public class AdjustCommandExecutor extends ICommandExecutor {
+public class AdjustCommandExecutor {
     Context context;
     String basePath;
     private static final String DefaultConfigName = "defaultConfig";
     private static final String DefaultEventName = "defaultEvent";
     private Map<String, Object> savedInstances = new HashMap<String, Object>();
-
+    Command command;
 
     public AdjustCommandExecutor(Context context) {
         this.context = context;
     }
 
-    @Override
     public void executeCommand(Command command) {
-        super.executeCommand(command);
-
+        this.command = command;
         try {
             switch (command.methodName) {
                 case "factory": factory(); break;
