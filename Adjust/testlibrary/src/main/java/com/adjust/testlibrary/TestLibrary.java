@@ -1,18 +1,24 @@
 package com.adjust.testlibrary;
 
+import android.os.SystemClock;
+
 import com.google.gson.Gson;
 
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.Future;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
+import java.util.concurrent.SynchronousQueue;
 import java.util.concurrent.TimeUnit;
 
 import static com.adjust.testlibrary.Constants.BASE_PATH_HEADER;
 import static com.adjust.testlibrary.Constants.TEST_LIBRARY_CLASSNAME;
 import static com.adjust.testlibrary.Constants.TEST_SCRIPT_HEADER;
 import static com.adjust.testlibrary.Constants.TEST_SESSION_END_HEADER;
+import static com.adjust.testlibrary.Constants.WAIT_FOR_CONTROL;
+import static com.adjust.testlibrary.Constants.WAIT_FOR_SLEEP;
 import static com.adjust.testlibrary.Utils.debug;
 import static com.adjust.testlibrary.Utils.sendPostI;
 
@@ -29,8 +35,9 @@ public class TestLibrary {
     ControlChannel controlChannel = new ControlChannel(this);
     String currentTest;
     Future<?> lastFuture;
-    public String currentBasePath;
-    Gson gson;
+    String currentBasePath;
+    Gson gson = new Gson();
+    BlockingQueue<String> waitControlQueue = new SynchronousQueue<>();
 
     public TestLibrary(String baseUrl, ICommandJsonListener commandJsonListener) {
         this(baseUrl);
@@ -45,8 +52,6 @@ public class TestLibrary {
     private TestLibrary(String baseUrl) {
         this.baseUrl = baseUrl;
         debug("base url: %s", baseUrl);
-
-        this.gson = new Gson();
     }
 
     public void initTestSession(final String clientSdk) {
@@ -146,7 +151,7 @@ public class TestLibrary {
     private void executeTestLibraryCommandI(TestCommand testCommand) {
         switch (testCommand.functionName) {
             case "end_test": endTestI(); break;
-//            case "wait": waitI(testCommand.params); break;
+            case "wait": waitI(testCommand.params); break;
         }
     }
 
@@ -159,15 +164,22 @@ public class TestLibrary {
 
         readHeadersI(httpResponse);
     }
-/*
+
     private void waitI(Map<String, List<String>> params) {
-        try {
-            debug("waiting for request to be received ");
-            String requestName = waitForRequestQueue.take();
-            debug("finished waiting for %s", requestName);
-        } catch (InterruptedException e) {
-            debug("wait error: %s", e.getMessage());
+        if (params.containsKey(WAIT_FOR_CONTROL)) {
+            String waitExpectedReason = params.get(WAIT_FOR_CONTROL).get(0);
+            debug("wait for %s", waitExpectedReason);
+            try {
+                String endReason = waitControlQueue.take();
+                debug("wait ended due to %s", endReason);
+            } catch (InterruptedException e) {
+                debug("wait take error: %s", e.getMessage());
+            }
+        }
+        if (params.containsKey(WAIT_FOR_SLEEP)) {
+            long millisToSleep = Long.parseLong(params.get(WAIT_FOR_CONTROL).get(0));
+
+            SystemClock.sleep(millisToSleep);
         }
     }
-    */
 }

@@ -13,5 +13,8 @@ public interface Constants {
     String BASE_PATH_HEADER = "BasePath";
     String TEST_SESSION_END_HEADER = "TestSessionEnd";
     String TEST_CANCEL_HEADER = "Cancel";
+    String TEST_ENDWAIT_HEADER = "EndWait";
     String TEST_LIBRARY_CLASSNAME = "TestLibrary";
+    String WAIT_FOR_CONTROL = "control";
+    String WAIT_FOR_SLEEP = "sleep";
 }

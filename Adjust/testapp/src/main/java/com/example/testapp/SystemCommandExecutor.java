@@ -12,16 +12,8 @@ public class SystemCommandExecutor extends ICommandExecutor {
         super.executeCommand(command);
 
         switch (command.methodName) {
-            case "sleep": sleep(); break;
             case "exit": exit(); break;
         }
-    }
-
-    private void sleep() {
-        String millisString = command.getFirstParameterValue("millis");
-        long millis = Long.parseLong(millisString);
-
-        SystemClock.sleep(millis);
     }
 
     private void exit() {
