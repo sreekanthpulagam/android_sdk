@@ -2,14 +2,12 @@ package com.adjust.testlibrary;
 
 import android.os.SystemClock;
 
-import java.util.List;
-import java.util.Map;
 import java.util.concurrent.Future;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
 import static com.adjust.testlibrary.Constants.ONE_SECOND;
-import static com.adjust.testlibrary.Constants.TEST_CANCEL_HEADER;
+import static com.adjust.testlibrary.Constants.TEST_CANCELTEST_HEADER;
 import static com.adjust.testlibrary.Constants.TEST_ENDWAIT_HEADER;
 import static com.adjust.testlibrary.Utils.debug;
 import static com.adjust.testlibrary.Utils.sendPostI;
@@ -76,8 +74,8 @@ public class ControlChannel {
     }
 
     void readControlHeaders(UtilsNetworking.HttpResponse httpResponse) {
-        if (httpResponse.headerFields.containsKey(TEST_CANCEL_HEADER)) {
-            debug("Test canceled due to %s", httpResponse.headerFields.get(TEST_CANCEL_HEADER).get(0));
+        if (httpResponse.headerFields.containsKey(TEST_CANCELTEST_HEADER)) {
+            debug("Test canceled due to %s", httpResponse.headerFields.get(TEST_CANCELTEST_HEADER).get(0));
             testLibrary.flushExecution();
             testLibrary.readHeaders(httpResponse);
         }
