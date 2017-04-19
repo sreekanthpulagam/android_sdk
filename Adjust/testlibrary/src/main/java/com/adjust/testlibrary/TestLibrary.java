@@ -178,9 +178,11 @@ public class TestLibrary {
             }
         }
         if (params.containsKey(WAIT_FOR_SLEEP)) {
-            long millisToSleep = Long.parseLong(params.get(WAIT_FOR_CONTROL).get(0));
+            long millisToSleep = Long.parseLong(params.get(WAIT_FOR_SLEEP).get(0));
+            debug("sleep for %s", millisToSleep);
 
             SystemClock.sleep(millisToSleep);
+            debug("sleep ended");
         }
     }
 
