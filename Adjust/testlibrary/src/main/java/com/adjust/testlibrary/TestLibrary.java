@@ -101,7 +101,10 @@ public class TestLibrary {
 
     public void readHeadersI(UtilsNetworking.HttpResponse httpResponse) {
         if (httpResponse.headerFields.containsKey(TEST_SESSION_END_HEADER)) {
-            controlChannel.teardown();
+            if (controlChannel != null) {
+                controlChannel.teardown();
+            }
+            controlChannel = null;
             debug("TestSessionEnd received");
             return;
         }
