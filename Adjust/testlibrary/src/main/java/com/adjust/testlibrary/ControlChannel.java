@@ -33,8 +33,9 @@ public class ControlChannel {
             controlChannelFuture.cancel(true);
         }
         controlChannelFuture = null;
-
-        controlChannelExecutor.shutdownNow();
+        if (controlChannelExecutor != null) {
+            controlChannelExecutor.shutdownNow();
+        }
         controlChannelExecutor = null;
     }
 
