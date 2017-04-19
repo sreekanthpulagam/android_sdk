@@ -1,12 +1,9 @@
 package com.adjust.testlibrary;
 
-import android.os.SystemClock;
-
 import java.util.concurrent.Future;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
-import static com.adjust.testlibrary.Constants.ONE_SECOND;
 import static com.adjust.testlibrary.Constants.TEST_CANCELTEST_HEADER;
 import static com.adjust.testlibrary.Constants.TEST_ENDWAIT_HEADER;
 import static com.adjust.testlibrary.Utils.debug;
@@ -26,31 +23,19 @@ public class ControlChannel {
 
     public ControlChannel(TestLibrary testLibrary) {
         this.testLibrary = testLibrary;
-    }
-
-    public void startControlChannel() {
-        endControlChannel();
-        debug("startControlChannel");
         sendControlRequest(CONTROL_START_PATH);
     }
 
-    public void endControlChannel() {
-        if (controlChannelFuture != null) {
-            // if the side channel connection is not done yet
-            if (!controlChannelFuture.isDone()) {
-                // wait one second before forcefully ending the connection
-                SystemClock.sleep(ONE_SECOND);
-            }
-            // if the side channel connection is still not done
-            if (!controlChannelFuture.isDone()) {
-                debug("cancel control channel");
-                // then cancel the connection
-                controlChannelFuture.cancel(true);
-                // and create a new executor
-                controlChannelExecutor = new ScheduledThreadPoolExecutor(1);
-            }
+    public void teardown() {
+        debug("ControlChannel teardown");
+        if (controlChannelFuture != null && !controlChannelFuture.isDone()) {
+            debug("ControlChannel lastFuture.cancel");
+            controlChannelFuture.cancel(true);
         }
         controlChannelFuture = null;
+
+        controlChannelExecutor.shutdownNow();
+        controlChannelExecutor = null;
     }
 
     private void sendControlRequest(final String controlPath) {

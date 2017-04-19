@@ -29,15 +29,15 @@ import static com.adjust.testlibrary.Utils.sendPostI;
 
 public class TestLibrary {
     static String baseUrl;
-    ScheduledThreadPoolExecutor executor = new ScheduledThreadPoolExecutor(1);
+    ScheduledThreadPoolExecutor executor;
     ICommandListener commandListener;
     ICommandJsonListener commandJsonListener;
-    ControlChannel controlChannel = new ControlChannel(this);
+    ControlChannel controlChannel;
     String currentTest;
     Future<?> lastFuture;
     String currentBasePath;
     Gson gson = new Gson();
-    BlockingQueue<String> waitControlQueue = new SynchronousQueue<>();
+    BlockingQueue<String> waitControlQueue;
 
     public TestLibrary(String baseUrl, ICommandJsonListener commandJsonListener) {
         this(baseUrl);
@@ -52,6 +52,13 @@ public class TestLibrary {
     private TestLibrary(String baseUrl) {
         this.baseUrl = baseUrl;
         debug("base url: %s", baseUrl);
+        resetTestLibrary();
+    }
+
+    private void resetTestLibrary() {
+        executor = new ScheduledThreadPoolExecutor(1);
+        waitControlQueue = new SynchronousQueue<>();
+        lastFuture = null;
     }
 
     public void initTestSession(final String clientSdk) {
@@ -79,7 +86,8 @@ public class TestLibrary {
             lastFuture.cancel(true);
         }
         executor.shutdownNow();
-        executor = new ScheduledThreadPoolExecutor(1);
+
+        resetTestLibrary();
     }
 
     private void sendTestSessionI(String clientSdk) {
@@ -93,7 +101,7 @@ public class TestLibrary {
 
     public void readHeadersI(UtilsNetworking.HttpResponse httpResponse) {
         if (httpResponse.headerFields.containsKey(TEST_SESSION_END_HEADER)) {
-            controlChannel.endControlChannel();
+            controlChannel.teardown();
             debug("TestSessionEnd received");
             return;
         }
@@ -104,18 +112,28 @@ public class TestLibrary {
 
         if (httpResponse.headerFields.containsKey(TEST_SCRIPT_HEADER)) {
             currentTest = httpResponse.headerFields.get(TEST_SCRIPT_HEADER).get(0);
-            controlChannel.startControlChannel();
+            if (controlChannel != null) {
+                controlChannel.teardown();
+            }
+            controlChannel = new ControlChannel(this);
 
             List<TestCommand> testCommands = Arrays.asList(gson.fromJson(httpResponse.response, TestCommand[].class));
-            execTestCommandsI(testCommands);
-            return;
+            try {
+                execTestCommandsI(testCommands);
+            } catch (InterruptedException e) {
+                debug("InterruptedException thrown %s", e.getMessage());
+            }
         }
     }
 
-    private void execTestCommandsI(List<TestCommand> testCommands) {
+    private void execTestCommandsI(List<TestCommand> testCommands) throws InterruptedException {
         debug("testCommands: %s", testCommands);
 
         for (TestCommand testCommand : testCommands) {
+            if (Thread.interrupted()) {
+                debug("Thread interrupted");
+                return;
+            }
             debug("ClassName: %s", testCommand.className);
             debug("FunctionName: %s", testCommand.functionName);
             debug("Params:");
@@ -148,7 +166,7 @@ public class TestLibrary {
         }
     }
 
-    private void executeTestLibraryCommandI(TestCommand testCommand) {
+    private void executeTestLibraryCommandI(TestCommand testCommand) throws InterruptedException {
         switch (testCommand.functionName) {
             case "end_test": endTestI(); break;
             case "wait": waitI(testCommand.params); break;
@@ -166,16 +184,12 @@ public class TestLibrary {
         readHeadersI(httpResponse);
     }
 
-    private void waitI(Map<String, List<String>> params) {
+    private void waitI(Map<String, List<String>> params) throws InterruptedException {
         if (params.containsKey(WAIT_FOR_CONTROL)) {
             String waitExpectedReason = params.get(WAIT_FOR_CONTROL).get(0);
             debug("wait for %s", waitExpectedReason);
-            try {
-                String endReason = waitControlQueue.take();
-                debug("wait ended due to %s", endReason);
-            } catch (InterruptedException e) {
-                debug("wait take error: %s", e.getMessage());
-            }
+            String endReason = waitControlQueue.take();
+            debug("wait ended due to %s", endReason);
         }
         if (params.containsKey(WAIT_FOR_SLEEP)) {
             long millisToSleep = Long.parseLong(params.get(WAIT_FOR_SLEEP).get(0));

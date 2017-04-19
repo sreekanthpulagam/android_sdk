@@ -25,7 +25,6 @@ public class Utils {
     }
     public static UtilsNetworking.HttpResponse sendPostI(String path, String clientSdk) {
         String targetURL = TestLibrary.baseUrl + path;
-        debug("targetURL: %s", targetURL);
 
         try {
             if (clientSdk != null) {
