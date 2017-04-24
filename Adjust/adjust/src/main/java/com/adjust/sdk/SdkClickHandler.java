@@ -21,6 +21,7 @@ public class SdkClickHandler implements ISdkClickHandler {
     private BackoffStrategy backoffStrategy;
     private WeakReference<IActivityHandler> activityHandlerWeakRef;
     private String basePath;
+    private WeakReference<IActivityHandler> activityHandlerWeakRef;
 
     @Override
     public void teardown() {
@@ -55,6 +56,7 @@ public class SdkClickHandler implements ISdkClickHandler {
         this.packageQueue = new ArrayList<ActivityPackage>();
         this.activityHandlerWeakRef = new WeakReference<IActivityHandler>(activityHandler);
         this.basePath = activityHandler.getBasePath();
+        this.activityHandlerWeakRef = new WeakReference<IActivityHandler>(activityHandler);
     }
 
     @Override
