@@ -159,11 +159,15 @@ public class AdjustFactory {
 
     // Teardown
 
-    public static void teardown(boolean deleteState) {
+    public static void teardown(Context context, boolean deleteState) {
         if (Adjust.defaultInstance != null) {
             Adjust.defaultInstance.teardown(deleteState);
         }
         Adjust.defaultInstance = null;
+        if(deleteState) {
+            ActivityHandler.deleteState(context);
+            PackageHandler.deleteState(context);
+        }
         packageHandler = null;
         requestHandler = null;
         attributionHandler = null;
