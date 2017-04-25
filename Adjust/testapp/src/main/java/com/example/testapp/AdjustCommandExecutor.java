@@ -207,7 +207,7 @@ public class AdjustCommandExecutor {
             adjustEvent.setOrderId(orderId);
         }
 
-        Adjust.trackEvent(adjustEvent);
+//        Adjust.trackEvent(adjustEvent);
     }
 
     private void trackEvent() {
@@ -294,6 +294,7 @@ public class AdjustCommandExecutor {
         String deleteStateString = command.getFirstParameterValue("deleteState");
         boolean deleteState = Boolean.parseBoolean(deleteStateString);
 
-        AdjustFactory.teardown(deleteState);
+        Log.d("TestApp", "calling teardown with delete state");
+        AdjustFactory.teardown(this.context, deleteState);
     }
 }
