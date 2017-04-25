@@ -216,7 +216,7 @@ public class AdjustCommandExecutor {
         if (command.parameters.containsKey("eventName")) {
             eventName = command.getFirstParameterValue("eventName");
         } else {
-            eventName = DefaultConfigName;
+            eventName = DefaultEventName;
         }
         AdjustEvent adjustEvent = (AdjustEvent)savedInstances.get(eventName);
         Adjust.trackEvent(adjustEvent);
