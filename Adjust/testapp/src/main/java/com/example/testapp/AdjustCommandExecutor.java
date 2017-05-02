@@ -1,6 +1,7 @@
 package com.example.testapp;
 
 import android.content.Context;
+import android.net.Uri;
 import android.util.Log;
 
 import com.adjust.sdk.Adjust;
@@ -54,6 +55,7 @@ public class AdjustCommandExecutor {
                 case "resetSessionPartnerParameters": resetSessionPartnerParameters(); break;
                 case "setPushToken": setPushToken(); break;
                 case "teardown": teardown(); break;
+                case "openDeeplink": openDeeplink(); break;
             }
         } catch (NullPointerException ex) {
             ex.printStackTrace();
@@ -296,5 +298,11 @@ public class AdjustCommandExecutor {
 
         Log.d("TestApp", "calling teardown with delete state");
         AdjustFactory.teardown(this.context, deleteState);
+    }
+
+    private void openDeeplink() {
+        String deeplink = command.getFirstParameterValue("deeplink");
+
+        Adjust.appWillOpenUrl(Uri.parse(deeplink));
     }
 }
