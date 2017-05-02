@@ -1,0 +1,137 @@
+#!/bin/bash
+
+APK_PATH=app.apk
+PACKAGE_NAME=com.example.testapp
+ACTIVITY_NAME=MainActivity
+
+EMULATOR_COUNT="2"
+ANDROID_TAG="google_apis"
+ANDROID_ABI="x86"
+console_port="5554"
+
+ANDROID_TARGETS[0]="system-images;android-25;google_apis;x86"
+ANDROID_TARGETS[1]="system-images;android-24;google_apis;x86"
+#ANDROID_TARGETS[1]="android-23"
+#ANDROID_TARGETS[2]="android-22"
+#ANDROID_TARGETS[3]="android-21"
+#ANDROID_TARGETS[4]="android-20"
+#ANDROID_TARGETS[5]="android-19"
+#ANDROID_TARGETS[6]="android-18"
+#ANDROID_TARGETS[7]="android-17"
+#ANDROID_TARGETS[8]="android-16"
+
+# Android works with ports in increments of two starting from 5554.
+# ex: 5554, 5556, 5558, ...
+function findFreePorts {
+    echo "finding free ports"
+    k=0
+    for (( i=0 ; i < $EMULATOR_COUNT; i++ )) {
+            ports[k]=${console_port} 
+            k=$(( $k + 1 ))
+            console_port=$(( ${console_port} + 2 ))
+        }
+}
+
+function createAVD {
+    local CONSOLE_PORT=$1
+    local android_target=$2
+
+    echo "Creating AVD: avd_${CONSOLE_PORT}"
+
+    echo no | avdmanager create avd --force --name avd_$CONSOLE_PORT --package "$android_target" --tag "$ANDROID_TAG" --abi "$ANDROID_ABI"
+}
+
+function startEmulator {
+    local CONSOLE_PORT=$1
+    echo "starting emulator: avd_${CONSOLE_PORT}"
+
+    echo "[emulator-$CONSOLE_PORT] Starting emulator with avd avd_$CONSOLE_PORT and console port $CONSOLE_PORT"
+    ${ANDROID_HOME}/tools/emulator -avd avd_$CONSOLE_PORT -port $CONSOLE_PORT -no-boot-anim -no-window &
+
+    # This waits for emulator to start up
+    echo  "[emulator-$CONSOLE_PORT] Waiting for emulator to boot completely"
+    wait_for_boot_complete "getprop dev.bootcomplete" 1
+    wait_for_boot_complete "getprop sys.boot_completed" 1
+
+    echo "[emulator-$CONSOLE_PORT] Done"
+
+    echo "[emulator-$CONSOLE_PORT]:  Remove app"
+    adb -s emulator-$CONSOLE_PORT uninstall $PACKAGE_NAME 
+
+    echo "[emulator-$CONSOLE_PORT]:  Installing app"
+    adb -s emulator-$CONSOLE_PORT install $APK_PATH
+
+    echo "[emulator-$CONSOLE_PORT]:  Run app"
+    adb -s emulator-$CONSOLE_PORT shell am start -n $PACKAGE_NAME/.$ACTIVITY_NAME
+
+    wait_for_boot_complete_inverse "ps" $PACKAGE_NAME
+    echo "[emulator-$CONSOLE_PORT]: Finished with $PACKAGE_NAME"
+
+    adb -s emulator-$CONSOLE_PORT emu kill
+    echo "[emulator-$CONSOLE_PORT]: Killed"
+}
+
+#TODO: this function is has the shit bugged out of it. Parameters are not getting interpreted properly
+# in the grep statements below. I know that the fucking lines 225 -> 230 are redundant. If you got a better
+# idea how to fix it, then fuck you, stop reading this, and fix it.
+function wait_for_boot_complete_inverse {
+    local boot_property=$1  
+    local boot_property_test=$2
+
+    echo "[emulator-$CONSOLE_PORT] Checking $boot_property... against $boot_property_test"
+    adb -s emulator-"${CONSOLE_PORT}" shell "${boot_property}" | grep example
+    adb -s emulator-"${CONSOLE_PORT}" shell "${boot_property}" | grep example
+    adb -s emulator-"${CONSOLE_PORT}" shell "${boot_property}" | grep example
+    adb -s emulator-"${CONSOLE_PORT}" shell "${boot_property}" | grep example
+    adb -s emulator-"${CONSOLE_PORT}" shell "${boot_property}" | grep example
+    adb -s emulator-"${CONSOLE_PORT}" shell "${boot_property}" | grep example
+    local result=$(adb -s emulator-"${CONSOLE_PORT}" shell "${boot_property}" | grep example)
+
+    while [ -n "$result" ]; do
+        sleep 1
+        result=$(adb -s emulator-"${CONSOLE_PORT}" shell "${boot_property}" | grep example)
+    done
+}
+
+# function to really, really check things are booted up
+function wait_for_boot_complete {
+    local boot_property=$1  
+    local boot_property_test=$2
+
+    echo "[emulator-$CONSOLE_PORT] Checking $boot_property... against $boot_property_test"
+    local result=`adb -s emulator-$CONSOLE_PORT shell $boot_property 2>/dev/null | grep "$boot_property_test"`
+
+    while [ -z "$result" ]; do
+        sleep 1
+        result=`adb -s emulator-$CONSOLE_PORT shell $boot_property 2>/dev/null | grep "$boot_property_test"`
+    done
+}
+
+# create one emulator instance
+function createOneEmulatorInstance {
+    local CONSOLE_PORT=$1
+    local android_target=$2
+
+    echo $CONSOLE_PORT
+
+    createAVD $CONSOLE_PORT $android_target
+    startEmulator $CONSOLE_PORT
+}
+
+function main {
+    # Get an array of free port numbers to use
+    findFreePorts
+
+    # Based on the port number found, create an instance of an emulator up to the EMULATOR_COUNT specified
+    for (( l=0, i=0 ; l < ${#ports[@]}, i < $EMULATOR_COUNT; i++, l++ )) {
+        echo "ports for emulator $((i+1)): console=${ports[$l]}: target=${ANDROID_TARGETS[$l]}"
+        createOneEmulatorInstance ${ports[$l]} ${ANDROID_TARGETS[$l]}
+    }
+
+    echo Emulator startup complete!
+}
+
+## Entry point
+cd $(dirname $0) 
+./makeproject
+main
