@@ -56,6 +56,7 @@ public class AdjustCommandExecutor {
                 case "setPushToken": setPushToken(); break;
                 case "teardown": teardown(); break;
                 case "openDeeplink": openDeeplink(); break;
+                case "sendReferrer": sendReferrer(); break;
             }
         } catch (NullPointerException ex) {
             ex.printStackTrace();
@@ -304,5 +305,11 @@ public class AdjustCommandExecutor {
         String deeplink = command.getFirstParameterValue("deeplink");
 
         Adjust.appWillOpenUrl(Uri.parse(deeplink));
+    }
+
+    private void  sendReferrer() {
+        String referrer = command.getFirstParameterValue("referrer");
+
+        Adjust.setReferrer(referrer);
     }
 }
