@@ -89,6 +89,9 @@ public class AdjustCommandExecutor {
                 context = null;
             }
             adjustConfig = new AdjustConfig(context, appToken, environment);
+            String logLevel = command.getFirstParameterValue("logLevel");
+//            adjustConfig.setLogLevel(LogLevel.valueOf(logLevel));
+            adjustConfig.setLogLevel(LogLevel.VERBOSE);
             savedInstances.put(configName, adjustConfig);
         }
 
