@@ -14,8 +14,6 @@ public interface IAttributionHandler {
 
     void checkSdkClickResponse(SdkClickResponseData sdkClickResponseData);
 
-    void checkSdkClickResponse(SdkClickResponseData responseData);
-
     void pauseSending();
 
     void resumeSending();
