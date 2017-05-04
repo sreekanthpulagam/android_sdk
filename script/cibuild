@@ -1,16 +1,17 @@
 #!/bin/bash
+export PYTHONIOENCODING=utf8
 
 APK_PATH=app.apk
 PACKAGE_NAME=com.example.testapp
 ACTIVITY_NAME=MainActivity
 
-EMULATOR_COUNT="2"
+EMULATOR_COUNT="1"
 ANDROID_TAG="google_apis"
 ANDROID_ABI="x86"
 console_port="5554"
 
 ANDROID_TARGETS[0]="system-images;android-25;google_apis;x86"
-ANDROID_TARGETS[1]="system-images;android-24;google_apis;x86"
+#ANDROID_TARGETS[1]="system-images;android-24;google_apis;x86"
 #ANDROID_TARGETS[1]="android-23"
 #ANDROID_TARGETS[2]="android-22"
 #ANDROID_TARGETS[3]="android-21"
@@ -67,29 +68,54 @@ function startEmulator {
     wait_for_boot_complete_inverse "ps" $PACKAGE_NAME
     echo "[emulator-$CONSOLE_PORT]: Finished with $PACKAGE_NAME"
 
+    local ip_addr=`adb -s emulator-$CONSOLE_PORT shell ifconfig eth0 | grep 'inet addr' | cut -d ':' -f 2 | cut -d ' ' -f 1`
+    echo "[*] ip_address for emulator-$CONSOLE_PORT is $ip_addr"
+
     adb -s emulator-$CONSOLE_PORT emu kill
     echo "[emulator-$CONSOLE_PORT]: Killed"
+
+    # echo logs and get the test result
+    output_logs_and_get_test_result $CONSOLE_PORT $ip_addr
 }
 
-#TODO: this function is has the shit bugged out of it. Parameters are not getting interpreted properly
-# in the grep statements below. I know that the fucking lines 225 -> 230 are redundant. If you got a better
-# idea how to fix it, then fuck you, stop reading this, and fix it.
+function output_logs_and_get_test_result {
+    echo "[*] output_logs_and_get_test_result()"
+
+    local CONSOLE_PORT=$1
+    local ip_addr=$2
+
+    #local ip_addr=`adb -s emulator-$CONSOLE_PORT shell ifconfig eth0 | grep 'inet addr' | cut -d ':' -f 2 | cut -d ' ' -f 1`
+    echo "[*] ip_address for emulator-$CONSOLE_PORT is $ip_addr"
+    
+    local test_result_json=`curl "http://localhost:8080/test_status?ipAddr=$ip_addr"`
+    local test_result_status=`echo $test_result_json | python -c "import sys, json; print json.load(sys.stdin)['status']"`
+    local test_result_message=`echo $test_result_json | python -c "import sys, json; print json.load(sys.stdin)['message']"`
+    echo "[*] >>>>>>>>>>>>>>>>>>>>>>>>>>>>>"
+    echo "[*] >> START test for emulator-$CONSOLE_PORT\n"
+    echo "[*] >>>>>>>>>>>>>>>>>>>>>>>>>>>>>"
+    echo "[*] >> Status: $test_result_status"
+    echo "[*] >>>>>>>>>>>>>>>>>>>>>>>>>>>>>"
+    echo "[*] >> Logs: "
+    printf "$test_result_message"
+    echo ""
+    echo "[*] >>>>>>>>>>>>>>>>>>>>>>>>>>>>>"
+    echo "[*] >> END test for emulator-$CONSOLE_PORT"
+    echo "[*] >>>>>>>>>>>>>>>>>>>>>>>>>>>>>"
+
+    exit $test_result_status
+}
+
 function wait_for_boot_complete_inverse {
     local boot_property=$1  
     local boot_property_test=$2
 
     echo "[emulator-$CONSOLE_PORT] Checking $boot_property... against $boot_property_test"
-    adb -s emulator-"${CONSOLE_PORT}" shell "${boot_property}" | grep example
-    adb -s emulator-"${CONSOLE_PORT}" shell "${boot_property}" | grep example
-    adb -s emulator-"${CONSOLE_PORT}" shell "${boot_property}" | grep example
-    adb -s emulator-"${CONSOLE_PORT}" shell "${boot_property}" | grep example
-    adb -s emulator-"${CONSOLE_PORT}" shell "${boot_property}" | grep example
-    adb -s emulator-"${CONSOLE_PORT}" shell "${boot_property}" | grep example
-    local result=$(adb -s emulator-"${CONSOLE_PORT}" shell "${boot_property}" | grep example)
+    local result=`adb -s emulator-$CONSOLE_PORT shell $boot_property 2>/dev/null | grep "$boot_property_test"`
 
     while [ -n "$result" ]; do
         sleep 1
-        result=$(adb -s emulator-"${CONSOLE_PORT}" shell "${boot_property}" | grep example)
+        result=`adb -s emulator-$CONSOLE_PORT shell $boot_property 2>/dev/null | grep "$boot_property_test"`
+        #result=`adb -s $CONSOLE_PORT shell $boot_property 2>/dev/null | grep "$boot_property_test"`
     done
 }
 
