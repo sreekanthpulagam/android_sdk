@@ -5,10 +5,12 @@ import android.net.Uri;
 import android.util.Log;
 
 import com.adjust.sdk.Adjust;
+import com.adjust.sdk.AdjustAttribution;
 import com.adjust.sdk.AdjustConfig;
 import com.adjust.sdk.AdjustEvent;
 import com.adjust.sdk.AdjustFactory;
 import com.adjust.sdk.LogLevel;
+import com.adjust.sdk.OnAttributionChangedListener;
 
 import java.util.HashMap;
 import java.util.List;
@@ -92,6 +94,13 @@ public class AdjustCommandExecutor {
             String logLevel = command.getFirstParameterValue("logLevel");
 //            adjustConfig.setLogLevel(LogLevel.valueOf(logLevel));
             adjustConfig.setLogLevel(LogLevel.VERBOSE);
+            adjustConfig.setOnAttributionChangedListener(new OnAttributionChangedListener() {
+                @Override
+                public void onAttributionChanged(AdjustAttribution attribution) {
+                    Log.d("TestApp", "attribution = " + attribution.toString());
+                }
+            });
+
             savedInstances.put(configName, adjustConfig);
         }
 
@@ -114,6 +123,7 @@ public class AdjustCommandExecutor {
                 case "suppress": logLevel = LogLevel.SUPRESS;
                     break;
             }
+            Log.d("TestApp", logLevel.toString());
             adjustConfig.setLogLevel(logLevel);
         }
 
