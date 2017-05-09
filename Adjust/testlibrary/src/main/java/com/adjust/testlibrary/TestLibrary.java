@@ -106,7 +106,6 @@ public class TestLibrary {
             }
             controlChannel = null;
             debug("TestSessionEnd received");
-            exit();
             return;
         }
 
@@ -174,6 +173,7 @@ public class TestLibrary {
         switch (testCommand.functionName) {
             case "end_test": endTestI(); break;
             case "wait": waitI(testCommand.params); break;
+            case "exit": exit(); break;
         }
     }
 

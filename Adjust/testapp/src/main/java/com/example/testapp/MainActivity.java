@@ -2,12 +2,19 @@ package com.example.testapp;
 
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.View;
 
 import com.adjust.sdk.AdjustFactory;
 import com.adjust.sdk.Constants;
 import com.adjust.sdk.UtilNetworking;
 import com.adjust.testlibrary.TestLibrary;
+
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
+import java.security.cert.CertificateEncodingException;
+import java.security.cert.CertificateException;
+import java.security.cert.X509Certificate;
 
 import javax.net.ssl.HostnameVerifier;
 import javax.net.ssl.HttpsURLConnection;
@@ -30,8 +37,7 @@ public class MainActivity extends AppCompatActivity {
 
         commandListener = new CommandListener(this.getApplicationContext());
         String baseUrl = "https://10.0.2.2:8443";
-        AdjustFactory.setBaseUrl(baseUrl);
-        AdjustFactory.setConnectionOptions(new ConnectionOptions());
+        AdjustFactory.setTestingMode(baseUrl);
         testLibrary = new TestLibrary(baseUrl, commandListener);
         startTestSession();
     }
@@ -43,47 +49,4 @@ public class MainActivity extends AppCompatActivity {
     public void onStartTestSession(View v) {
         startTestSession();
     }
-
-    private static class ConnectionOptions implements UtilNetworking.IConnectionOptions {
-        @Override
-        public void applyConnectionOptions(HttpsURLConnection connection, String clientSdk) {
-            connection.setRequestProperty("Client-SDK", clientSdk);
-            connection.setConnectTimeout(Constants.ONE_MINUTE);
-            connection.setReadTimeout(Constants.ONE_MINUTE);
-            // XXX disable ssl checks for tests, temporary!
-            try {
-                SSLContext sc = SSLContext.getInstance("TLS");
-                sc.init(null, new TrustManager[]{
-                        new X509TrustManager() {
-                            public java.security.cert.X509Certificate[] getAcceptedIssuers() {
-                                //getLogger().verbose("getAcceptedIssuers");
-
-                                return null;
-                            }
-                            public void checkClientTrusted(
-                                    java.security.cert.X509Certificate[] certs, String authType) {
-                                //getLogger().verbose("checkClientTrusted %s", certs);
-                            }
-                            public void checkServerTrusted(
-                                    java.security.cert.X509Certificate[] certs, String authType) {
-                                //getLogger().verbose("checkServerTrusted %s", certs);
-                            }
-                        }
-                }, new java.security.SecureRandom());
-                connection.setSSLSocketFactory(sc.getSocketFactory());
-
-                connection.setHostnameVerifier(new HostnameVerifier() {
-                    @Override
-                    public boolean verify(String hostname, SSLSession session) {
-                        //getLogger().verbose("verify hostname %s", hostname);
-                        return true;
-                    }
-                });
-            } catch (Exception e) {
-                debug("applyConnectionOptions %s", e.getMessage());
-            }
-
-        }
-    }
-
 }

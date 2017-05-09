@@ -2,6 +2,7 @@ package com.adjust.sdk;
 
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
+import java.lang.ref.WeakReference;
 import java.net.SocketTimeoutException;
 import java.util.ArrayList;
 import java.util.List;
@@ -18,6 +19,7 @@ public class SdkClickHandler implements ISdkClickHandler {
     private boolean paused;
     private List<ActivityPackage> packageQueue;
     private BackoffStrategy backoffStrategy;
+    private WeakReference<IActivityHandler> activityHandlerWeakRef;
     private String basePath;
 
     @Override
@@ -31,7 +33,9 @@ public class SdkClickHandler implements ISdkClickHandler {
         if (packageQueue != null) {
             packageQueue.clear();
         }
-
+        if (activityHandlerWeakRef != null) {
+            activityHandlerWeakRef.clear();
+        }
         scheduledExecutor = null;
         logger = null;
         packageQueue = null;
@@ -49,7 +53,9 @@ public class SdkClickHandler implements ISdkClickHandler {
     public void init(IActivityHandler activityHandler, boolean startsSending) {
         this.paused = !startsSending;
         this.packageQueue = new ArrayList<ActivityPackage>();
+        this.activityHandlerWeakRef = new WeakReference<IActivityHandler>(activityHandler);
         this.basePath = activityHandler.getBasePath();
+        this.activityHandlerWeakRef = new WeakReference<IActivityHandler>(activityHandler);
     }
 
     @Override
@@ -133,7 +139,16 @@ public class SdkClickHandler implements ISdkClickHandler {
 
             if (responseData.jsonResponse == null) {
                 retrySendingI(sdkClickPackage);
+                return;
             }
+
+            IActivityHandler activityHandler = activityHandlerWeakRef.get();
+            if (activityHandler == null) {
+                return;
+            }
+
+            activityHandler.finishedTrackingActivity(responseData);
+
         } catch (UnsupportedEncodingException e) {
             logErrorMessageI(sdkClickPackage, "Sdk_click failed to encode parameters", e);
         } catch (SocketTimeoutException e) {
