@@ -32,12 +32,18 @@ public class TestLibrary {
     ScheduledThreadPoolExecutor executor;
     ICommandListener commandListener;
     ICommandJsonListener commandJsonListener;
+    ICommandRawJsonListener commandRawJsonListener;
     ControlChannel controlChannel;
     String currentTest;
     Future<?> lastFuture;
     String currentBasePath;
     Gson gson = new Gson();
     BlockingQueue<String> waitControlQueue;
+
+    public TestLibrary(String baseUrl, ICommandRawJsonListener commandRawJsonListener) {
+        this(baseUrl);
+        this.commandRawJsonListener = commandRawJsonListener;
+    }
 
     public TestLibrary(String baseUrl, ICommandJsonListener commandJsonListener) {
         this(baseUrl);
@@ -159,8 +165,10 @@ public class TestLibrary {
             }
             if (commandListener != null) {
                 commandListener.executeCommand(testCommand.className, testCommand.functionName, testCommand.params);
-            } else {
+            } else if (commandJsonListener != null) {
                 commandJsonListener.executeCommand(testCommand.className, testCommand.functionName, gson.toJson(testCommand.params));
+            } else if (commandRawJsonListener != null) {
+                commandRawJsonListener.executeCommand(gson.toJson(testCommand));
             }
             long timeAfter = System.nanoTime();
             long timeElapsedMillis = TimeUnit.NANOSECONDS.toMillis(timeAfter - timeBefore);
