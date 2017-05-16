@@ -193,6 +193,7 @@ public class TestLibrary {
         }
 
         readHeadersI(httpResponse);
+        exit();
     }
 
     private void waitI(Map<String, List<String>> params) throws InterruptedException {
