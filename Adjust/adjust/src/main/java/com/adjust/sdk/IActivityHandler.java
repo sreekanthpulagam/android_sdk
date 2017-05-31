@@ -62,4 +62,6 @@ public interface IActivityHandler {
     String getAdid();
 
     AdjustAttribution getAttribution();
+
+    String getBasePath();
 }
