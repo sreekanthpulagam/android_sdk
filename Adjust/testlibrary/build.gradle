@@ -29,4 +29,9 @@ task makeJar(type: Copy) {
     rename('classes.jar', "adjust-testing.jar")
 }
 
+tasks.withType(JavaCompile) { 
+    sourceCompatibility = "1.8"
+    targetCompatibility = "1.7" 
+}
+
 makeJar.dependsOn(clearJar, build)
