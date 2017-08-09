@@ -329,8 +329,6 @@ public class AdjustInstance {
             activityHandler.teardown(deleteState);
         }
 
-        activityHandler.teardown(deleteState);
-
         activityHandler = null;
         preLaunchActionsArray = null;
         pushToken = null;
